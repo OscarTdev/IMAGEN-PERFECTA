@@ -1,0 +1,133 @@
+@import "tailwindcss";
+
+/* Voz display propia del mundo monocromo: Archivo, grotesca de imprenta
+   autohospedada (variable 100-900). El cuerpo de datos queda en la pila
+   de sistema; la letra con carácter es para títulos, marca y valores. */
+@font-face {
+  font-family: "Archivo";
+  src: url("./assets/fonts/archivo-var.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-display: "Archivo", ui-sans-serif, system-ui, sans-serif;
+  /* Mundo: ficha de impresión monocroma (marketing de producto).
+     Papel, tinta, plata; el color solo hace trabajos funcionales. */
+  --color-paper: #fafaf8;
+  --color-paper-2: #f2f1ec;
+  --color-paper-3: #e7e6e0;
+  --color-ink: #141412;
+  --color-ink-2: #3d3d38;
+  --color-silver: #6b6b66;
+  --color-silver-2: #6c6b65;
+  --color-hairline: #dcdbd4;
+  --color-negative: #111110;
+  --color-negative-2: #1b1b18;
+  --color-negative-3: #262622;
+}
+
+@layer base {
+  html {
+    color-scheme: light;
+  }
+  html.dark {
+    color-scheme: dark;
+  }
+  body {
+    @apply min-h-screen antialiased font-sans bg-paper text-ink dark:bg-negative dark:text-[#f2f1ec];
+  }
+
+  /* La voz display: títulos, marca y valores de especificación en Archivo */
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    letter-spacing: -0.015em;
+  }
+
+  /* Superficies del navegador: la selección, el caret y el foco llevan la paleta */
+  ::selection {
+    background: #141412;
+    color: #fafaf8;
+  }
+  .dark ::selection {
+    background: #f2f1ec;
+    color: #111110;
+  }
+  :focus-visible {
+    outline: 2px solid #141412;
+    outline-offset: 2px;
+  }
+  .dark :focus-visible {
+    outline-color: #f2f1ec;
+  }
+  input,
+  textarea {
+    caret-color: #141412;
+  }
+  .dark input,
+  .dark textarea {
+    caret-color: #f2f1ec;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply rounded-full bg-[#c9c8c1] dark:bg-[#3a3a35];
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-[#a5a49e] dark:bg-[#55554e];
+  }
+}
+
+@utility font-data {
+  /* Código y medición: mono tabular para IP-XXXX, hashes y conteos */
+  font-family: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+@layer utilities {
+  /* Banda de especificaciones: etiqueta mono pequeña + valor fuerte, dividida por filetes */
+  .spec-label {
+    @apply block text-[10px] font-data uppercase tracking-[0.14em] text-silver dark:text-[#8d8c85];
+  }
+  .spec-value {
+    @apply text-2xl font-bold tracking-tight text-ink dark:text-[#f2f1ec];
+    font-family: var(--font-display);
+  }
+
+  /* Panel de hoja de producto: filete de 1px, sin sombra */
+  .sheet {
+    @apply border border-hairline bg-paper dark:border-[#2a2a26] dark:bg-negative-2;
+  }
+
+  /* Movimiento firma: la inversión positivo/negativo se orquesta UNA vez.
+     La clase vive en <html> solo durante el cambio (App la añade y la retira),
+     y mientras tanto TODAS las superficies cruzfunden fondo, tinta y filete. */
+  html.theme-flip,
+  html.theme-flip body {
+    transition: background-color 260ms cubic-bezier(0.19, 1, 0.22, 1),
+      color 260ms cubic-bezier(0.19, 1, 0.22, 1);
+  }
+  html.theme-flip *,
+  html.theme-flip *::before,
+  html.theme-flip *::after {
+    transition: background-color 260ms cubic-bezier(0.19, 1, 0.22, 1),
+      color 260ms cubic-bezier(0.19, 1, 0.22, 1),
+      border-color 260ms cubic-bezier(0.19, 1, 0.22, 1),
+      fill 260ms cubic-bezier(0.19, 1, 0.22, 1),
+      stroke 260ms cubic-bezier(0.19, 1, 0.22, 1) !important;
+    transition-delay: 0ms !important;
+  }
+}

@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 96">
+  <defs>
+    <linearGradient id="ip-logo-g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#F06595"/>
+      <stop offset="0.55" stop-color="#E84393"/>
+      <stop offset="1" stop-color="#7B2DBE"/>
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="92" height="92" rx="24" fill="#0B0B12"/>
+  <g fill="none" stroke="url(#ip-logo-g)" stroke-width="6" stroke-linecap="round">
+    <circle cx="48" cy="48" r="25"/>
+    <path d="m55.7 32.8 14.4 25"/>
+    <path d="m48.2 32.8h28.8"/>
+    <path d="m40.7 40.2 14.4-25"/>
+    <path d="m48.2 63.2-14.4-25"/>
+    <path d="m55.7 63.2H26.9"/>
+    <path d="m63.1 55.8-14.4 25"/>
+  </g>
+  <text x="110" y="52" font-family="Georgia, 'Times New Roman', serif" font-size="34" font-weight="700" letter-spacing="2" fill="#0B0B12">IMAGEN</text>
+  <text x="110" y="80" font-family="Georgia, 'Times New Roman', serif" font-size="20" letter-spacing="8" fill="#C2255C">PERFECTA</text>
+</svg>
