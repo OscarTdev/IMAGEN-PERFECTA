@@ -1,0 +1,19 @@
+[
+  { "idTxn": 90001, "user": "ana@demo.co",    "date": "2026-10-06T09:00:01", "value": 50000,  "paymentMethod": "Tarjeta",      "hash": "d94fa63f732e8d6b2dc28d408949d19f13b7568335969879d6bbde3777178756" },
+  { "idTxn": 90002, "user": "ana@demo.co",    "date": "2026-10-06T09:00:03", "value": 30000,  "paymentMethod": "Tarjeta",      "hash": "d94fa63f732e8d6b2dc28d408949d19f13b7568335969879d6bbde3777178756" },
+  { "idTxn": 90003, "user": "ana@demo.co",    "date": "2026-10-06T09:00:05", "value": 20000,  "paymentMethod": "Nequi",        "hash": "d94fa63f732e8d6b2dc28d408949d19f13b7568335969879d6bbde3777178756" },
+  { "idTxn": 90004, "user": "ana@demo.co",    "date": "2026-10-06T09:00:08", "value": 15000,  "paymentMethod": "Efectivo",     "hash": "d94fa63f732e8d6b2dc28d408949d19f13b7568335969879d6bbde3777178756" },
+  { "idTxn": 90005, "user": "luis@demo.co",   "date": "2026-10-06T09:00:01", "value": 80000,  "paymentMethod": "Transferencia", "hash": "d94fa63f732e8d6b2dc28d408949d19f13b7568335969879d6bbde3777178756" },
+  { "idTxn": 90006, "user": "luis@demo.co",   "date": "2026-10-06T09:00:20", "value": 45000,  "paymentMethod": "Tarjeta",      "hash": "d94fa63f732e8d6b2dc28d408949d19f13b7568335969879d6bbde3777178756" },
+  { "idTxn": 90007, "user": "maria@demo.co",  "date": "2026-10-06T15:00:01", "value": 120000, "paymentMethod": "Tarjeta",      "hash": "d94fa63f732e8d6b2dc28d408949d19f13b7568335969879d6bbde3777178756" },
+  { "idTxn": 90008, "user": "maria@demo.co",  "date": "2026-10-06T15:00:02", "value": 60000,  "paymentMethod": "Nequi",        "hash": "d94fa63f732e8d6b2dc28d408949d19f13b7568335969879d6bbde3777178756" },
+  { "idTxn": 90009, "user": "maria@demo.co",  "date": "2026-10-06T15:00:03", "value": 25000,  "paymentMethod": "Efectivo",     "hash": "d94fa63f732e8d6b2dc28d408949d19f13b7568335969879d6bbde3777178756" },
+  { "idTxn": 90010, "user": "pedro@demo.co",  "date": "2026-10-06T22:00:01", "value": 70000,  "paymentMethod": "Tarjeta",      "hash": "d94fa63f732e8d6b2dc28d408949d19f13b7568335969879d6bbde3777178756" },
+  { "idTxn": 90011, "user": "pedro@demo.co",  "date": "2026-10-06T22:00:03", "value": 35000,  "paymentMethod": "Efectivo",     "hash": "d94fa63f732e8d6b2dc28d408949d19f13b7568335969879d6bbde3777178756" },
+  { "idTxn": 90012, "user": "sonia@demo.co",  "date": "2026-10-06T22:00:01", "value": 90000,  "paymentMethod": "Transferencia", "hash": "d94fa63f732e8d6b2dc28d408949d19f13b7568335969879d6bbde3777178756" },
+  { "idTxn": 90013, "user": "sonia@demo.co",  "date": "2026-10-06T22:00:02", "value": 40000,  "paymentMethod": "Tarjeta",      "hash": "d94fa63f732e8d6b2dc28d408949d19f13b7568335969879d6bbde3777178756" },
+  { "idTxn": 90014, "user": "sonia@demo.co",  "date": "2026-10-06T22:00:03", "value": 18000,  "paymentMethod": "Nequi",        "hash": "d94fa63f732e8d6b2dc28d408949d19f13b7568335969879d6bbde3777178756" },
+  { "idTxn": 90015, "user": "carlos@demo.co", "date": "2026-10-06T08:30:00", "value": 55000,  "paymentMethod": "Tarjeta",      "hash": "d94fa63f732e8d6b2dc28d408949d19f13b7568335969879d6bbde3777178756" },
+  { "idTxn": 90016, "user": "carlos@demo.co", "date": "2026-10-06T16:45:00", "value": 32000,  "paymentMethod": "Efectivo",     "hash": "d94fa63f732e8d6b2dc28d408949d19f13b7568335969879d6bbde3777178756" },
+  { "idTxn": 90017, "user": "carlos@demo.co", "date": "2026-10-06T23:15:00", "value": 95000,  "paymentMethod": "Nequi",        "hash": "d94fa63f732e8d6b2dc28d408949d19f13b7568335969879d6bbde3777178756" }
+]
