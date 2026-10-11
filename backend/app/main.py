@@ -12,16 +12,32 @@ from app.database.seed import seed_database
 
 
 def _migrar_columnas():
-    """Agrega id_txn si la DB externa es de una versión anterior."""
-    try:
-        from sqlalchemy import text
+    """Agrega columnas si la DB es de una versión anterior (SQLite o MySQL)."""
+    from sqlalchemy import text
+
+    def columnas(tabla: str) -> set:
         with engine.connect() as c:
-            cols = [r[1] for r in c.execute(text("PRAGMA table_info(pedidos)")).fetchall()]
-            if "id_txn" not in cols:
-                c.execute(text("ALTER TABLE pedidos ADD COLUMN id_txn INTEGER"))
-                c.commit()
-    except Exception:
-        pass
+            if engine.dialect.name == "sqlite":
+                rows = c.execute(text(f"PRAGMA table_info({tabla})")).fetchall()
+                return {r[1] for r in rows}
+            rows = c.execute(
+                text("SELECT column_name FROM information_schema.columns "
+                     "WHERE table_schema = DATABASE() AND table_name = :t"),
+                {"t": tabla},
+            ).fetchall()
+            return {r[0] for r in rows}
+
+    def agregar_si_falta(tabla: str, columna: str, ddl_tipo: str):
+        try:
+            if columna not in columnas(tabla):
+                with engine.begin() as c:
+                    c.execute(text(f"ALTER TABLE {tabla} ADD COLUMN {columna} {ddl_tipo}"))
+        except Exception:
+            pass
+
+    agregar_si_falta("pedidos", "id_txn", "INTEGER")
+    # REQUISITO A3: fechas_ventana persiste la línea de tiempo de la anomalía
+    agregar_si_falta("anomalias", "fechas_ventana", "TEXT")
 
 
 @asynccontextmanager

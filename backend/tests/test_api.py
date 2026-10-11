@@ -489,3 +489,161 @@ class TestCasosLimite:
         assert response.status_code == 200
         data = response.json()
         assert data["lineal"]["mejor"]["operaciones"] < data["lineal"]["peor"]["operaciones"]
+
+
+# ═══════════════════════════════════════════════════════════════════
+# TESTS DE TRANSACCIONES, ANOMALÍAS Y DASHBOARD (PDF Appresso → Imagen Perfecta)
+# Verifican uno a uno los requisitos del dashboard de seguridad:
+#   D1-D15 banda día/semana/mes e indicadores,
+#   A1-A6 evolución, niveles, línea de tiempo, ventana, métodos, por hora.
+# ═══════════════════════════════════════════════════════════════════
+
+from datetime import datetime  # noqa: E402
+
+from app.core import config as cfg  # noqa: E402
+
+HASH_OK = cfg.HASH_AUTORIZADO
+
+
+def _txn(idTxn, user, date, value=50000, pago="Tarjeta", hash_=None):
+    """Transacción en el formato EXACTO del profesor."""
+    return {
+        "idTxn": idTxn,
+        "user": user,
+        "date": date,
+        "value": value,
+        "paymentMethod": pago,
+        "hash": hash_ or HASH_OK,
+    }
+
+
+class TestTransaccionesProfe:
+    """Contrato del profesor: hash, duplicados, lote y ventana deslizante (REQUISITO D3)."""
+
+    def test_txn_valida_normal(self):
+        r = client.post("/api/transacciones", json=_txn(700001, "dash@test.co", "2026-10-05T14:30:01"))
+        assert r.status_code == 200
+        body = r.json()
+        assert body["deteccion"] == "NORMAL"
+        assert body["hash_valido"] is True
+        assert body["codigo"].startswith("IP-")
+
+    def test_hash_invalido_rechazado(self):
+        r = client.post(
+            "/api/transacciones",
+            json=_txn(700002, "dash@test.co", "2026-10-05T14:30:02", hash_="ff" * 32),
+        )
+        assert r.status_code == 400
+        assert "HASH_INVALIDO" in r.json()["detail"]
+
+    def test_duplicado_rechazado(self):
+        t = _txn(700003, "dup@test.co", "2026-10-05T14:31:01")
+        r1 = client.post("/api/transacciones", json=t)
+        assert r1.status_code == 200
+        r2 = client.post("/api/transacciones", json=t)
+        assert r2.status_code == 400
+        assert "RECHAZADO_DUPLICADO" in r2.json()["detail"]
+
+    def test_rafaga_genera_posible_fraude_y_linea_de_tiempo(self):
+        """REQUISITOS D3 + A3: 3 tx del mismo usuario dentro de la ventana de su
+        turno -> POSIBLE_FRAUDE con línea de tiempo persistida."""
+        user = "rafaga@test.co"
+        base = 710000
+        fechas = ["2026-10-05T15:00:01", "2026-10-05T15:00:03", "2026-10-05T15:00:05"]
+        detecciones = []
+        for i, f in enumerate(fechas):
+            r = client.post("/api/transacciones", json=_txn(base + i, user, f, value=10000 * (i + 1)))
+            assert r.status_code == 200
+            detecciones.append(r.json()["deteccion"])
+        assert detecciones == ["NORMAL", "NORMAL", "POSIBLE_FRAUDE"]
+
+        r = client.get("/api/anomalias", params={"tipo": "POSIBLE_FRAUDE"})
+        propias = [a for a in r.json() if a["detalle"] and user in a["detalle"]]
+        assert propias, "debe existir la anomalía de la ráfaga"
+        a = propias[0]
+        assert a["cantidad_transacciones"] == 3
+        assert a["ventana_segundos"] == cfg.ventana_por_turno(datetime(2026, 10, 5, 15, 0, 5))
+        # REQUISITO A3: línea de tiempo = transacciones dentro de la ventana
+        assert len(a["transacciones_ventana"]) == 3
+        assert [t["idTxn"] for t in a["transacciones_ventana"]] == [base, base + 1, base + 2]
+
+    def test_lote_ordenado_con_ventana_por_usuario(self):
+        """El lote se procesa ordenado cronológicamente aunque llegue desordenado."""
+        lote = [
+            _txn(720001, "lote@test.co", "2026-10-05T10:00:03"),
+            _txn(720002, "lote@test.co", "2026-10-05T10:00:01"),
+            _txn(720003, "lote@test.co", "2026-10-05T10:00:02"),
+        ]
+        r = client.post("/api/transacciones/lote", json=lote)
+        assert r.status_code == 200
+        body = r.json()
+        assert body["resumen"]["TOTAL"] == 3
+        assert body["resumen"]["NORMAL"] == 2
+        assert body["resumen"]["POSIBLE_FRAUDE"] == 1
+        assert body["detalle"][0]["deteccion"] == "NORMAL"
+        assert body["detalle"][2]["deteccion"] == "POSIBLE_FRAUDE"
+
+
+class TestDashboardSeguridad:
+    """REQUISITOS D1-D15 y A1-A6: métricas agregadas del dashboard."""
+
+    def test_dashboard_campos_agregados(self):
+        r = client.get("/api/dashboard")
+        assert r.status_code == 200
+        d = r.json()
+
+        # REQUISITOS D1 / D5: transacciones total + día/semana/mes
+        for k in ("total", "hoy", "semana", "mes"):
+            assert k in d["transacciones"]
+        # REQUISITOS D1 / D6: anomalías total + día/semana/mes
+        for k in ("total", "hoy", "semana", "mes"):
+            assert k in d["anomalias"]
+        # REQUISITOS D7, D11, D12, D13, D14
+        for k in ("porcentaje", "nuevas", "abiertas", "revisadas", "descartadas"):
+            assert k in d["anomalias"]
+        # REQUISITOS D2 / D3 / A2: casos recurrentes por tipo y por nivel
+        assert isinstance(d["anomalias"]["por_tipo"], dict)
+        assert isinstance(d["anomalias"]["por_nivel"], dict)
+        assert d["anomalias"]["por_tipo"].get("POSIBLE_FRAUDE", 0) >= 2
+        # REQUISITOS D4 / D8: usuarios recurrentes y afectados
+        assert isinstance(d["usuarios_recurrentes"], list)
+        assert d["clientes_afectados"] >= 1
+        # REQUISITOS D9 / D10: valor sospechoso y promedio por usuario
+        assert d["valor_sospechoso"] > 0
+        assert d["promedio_por_usuario"] > 0
+        # REQUISITO A5: métodos de pago de las transacciones
+        assert "Tarjeta" in d["por_metodo_pago"]
+        # REQUISITO A6: distribución por hora con las 24 horas
+        assert len(d["por_hora"]) == 24
+        # REQUISITOS D15 / A1: serie diaria de 14 días (tendencias y picos)
+        assert len(d["serie_diaria"]) == 14
+        assert all({"fecha", "transacciones", "anomalias"} <= set(p) for p in d["serie_diaria"])
+
+    def test_dashboard_solo_cuenta_transacciones_reales(self):
+        """REQUISITO D5: los 30 pedidos semilla NO cuentan como transacciones."""
+        d = client.get("/api/dashboard").json()
+        assert d["pedidos"]["total"] >= 30
+        assert d["transacciones"]["total"] >= 1
+        assert d["transacciones"]["total"] < d["pedidos"]["total"]
+
+    def test_revisar_anomalia(self):
+        """REQUISITOS D12 → D13/D14: ciclo de revisión reflejado en el dashboard."""
+        r = client.get("/api/anomalias", params={"estado_revision": "abierta"})
+        abiertas = r.json()
+        assert abiertas, "debe haber anomalías abiertas de las ráfagas"
+        a = abiertas[0]
+        r2 = client.patch(f"/api/anomalias/{a['id']}", json={"estado_revision": "revisada"})
+        assert r2.status_code == 200
+        assert r2.json()["estado_revision"] == "revisada"
+        d = client.get("/api/dashboard").json()
+        assert d["anomalias"]["revisadas"] >= 1
+
+    def test_revisar_anomalia_inexistente(self):
+        r = client.patch("/api/anomalias/999999", json={"estado_revision": "revisada"})
+        assert r.status_code == 404
+
+    def test_listar_anomalias_por_estado(self):
+        """REQUISITOS D12-D14: filtro por estado de revisión."""
+        r = client.get("/api/anomalias", params={"estado_revision": "revisada"})
+        assert r.status_code == 200
+        assert all(a["estado_revision"] == "revisada" for a in r.json())

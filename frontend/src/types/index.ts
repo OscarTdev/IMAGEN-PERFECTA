@@ -54,6 +54,14 @@ export interface PedidoCreate {
   hash?: string;
 }
 
+// Transacción dentro de la ventana deslizante de una anomalía (línea de tiempo)
+export interface TxnVentana {
+  idTxn: number | string;
+  fecha: string;
+  valor: number;
+  metodo_pago?: string;
+}
+
 export interface Anomalia {
   id: number;
   pedido_id?: number;
@@ -64,18 +72,46 @@ export interface Anomalia {
   ventana_segundos: number;
   estado_revision: string;
   detalle?: string;
+  transacciones_ventana?: TxnVentana[];
   fecha_creacion?: string;
 }
 
+export interface UsuarioRecurrente {
+  cliente_id: number;
+  email?: string;
+  anomalias: number;
+}
+
+export interface PuntoDiario {
+  fecha: string;
+  transacciones: number;
+  anomalias: number;
+}
+
 export interface DashboardSeguridad {
-  pedidos: { total: number; hoy: number; semana: number; mes: number };
-  anomalias: { total: number; hoy: number; semana: number; mes: number; abiertas: number; revisadas: number; descartadas: number; porcentaje: number };
+  pedidos: { total: number };
+  transacciones: { total: number; hoy: number; semana: number; mes: number };
+  anomalias: {
+    total: number;
+    hoy: number;
+    semana: number;
+    mes: number;
+    nuevas: number;
+    abiertas: number;
+    revisadas: number;
+    descartadas: number;
+    porcentaje: number;
+    por_tipo: Record<string, number>;
+    por_nivel: Record<string, number>;
+  };
   clientes_afectados: number;
   clientes_recurrentes: number[];
+  usuarios_recurrentes: UsuarioRecurrente[];
   valor_sospechoso: number;
-  promedio_por_cliente: number;
+  promedio_por_usuario: number;
   por_hora: Record<string, number>;
   por_metodo_pago: Record<string, number>;
+  serie_diaria: PuntoDiario[];
 }
 
 export interface AppConfig {

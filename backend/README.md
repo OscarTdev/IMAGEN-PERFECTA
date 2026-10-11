@@ -29,8 +29,6 @@ pip install -r requirements.txt
 # 2. (Opcional) Configurar variables de entorno para la DB
 # Copiar .env.example a .env y ajustar:
 #   DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME   (para MySQL)
-#   O bien definir DATABASE_URL directamente (ej. mysql+pymysql://user:pass@host:port/db)
-#   O bien definir IMAGEN_DB_PATH para usar SQLite (ruta a .db)
 # Si no se define nada: se usa MySQL con credenciales por defecto (root@localhost/imagen_perfecta)
 
 # 3. Iniciar servidor FastAPI

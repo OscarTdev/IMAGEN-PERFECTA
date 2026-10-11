@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional, Literal
+from typing import Optional, Literal, List, Any
 from datetime import datetime
 
 class AnomaliaResponse(BaseModel):
@@ -12,6 +12,8 @@ class AnomaliaResponse(BaseModel):
     ventana_segundos: int
     estado_revision: str
     detalle: Optional[str] = None
+    # REQUISITO A3: línea de tiempo de la ventana deslizante (transacciones que la formaron)
+    transacciones_ventana: Optional[List[dict[str, Any]]] = None
     fecha_creacion: Optional[datetime] = None
 
     model_config = {'from_attributes': True}

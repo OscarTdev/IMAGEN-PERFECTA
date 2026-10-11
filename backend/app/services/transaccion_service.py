@@ -4,7 +4,8 @@ Flujo: recibir -> verificar hash -> identificar usuario/cliente -> registrar
 transacción + pedido IP-XXXX -> ventana deslizante por turno -> anomalías.
 """
 import hmac
-from datetime import datetime
+import json
+from datetime import datetime, timedelta
 from typing import List, Tuple
 from sqlalchemy.orm import Session
 
@@ -134,6 +135,9 @@ def ingest_una(db: Session, t) -> Tuple[Pedido, str]:
     # Autofirma del servidor sobre el payload del negocio
     pedido.hash = generar_hash(pedido_service.payload_hash(pedido), cfg.LLAVE_SECRETA)
     pedido.id_txn = int(t.idTxn) if str(t.idTxn).isdigit() else None
+    # Flush explícito: el idTxn debe estar en la BD para que la línea de
+    # tiempo de la anomalía (REQUISITO A3) encuentre también ESTA transacción.
+    db.flush()
 
     # 6. VENTANA DESLIZANTE por turno (10/6/3 s) sobre pedidos del cliente
     turno = cfg.turno_de_fecha(fecha_txn)
@@ -144,13 +148,30 @@ def ingest_una(db: Session, t) -> Tuple[Pedido, str]:
     cantidad = res["cantidad_en_ventana"]
 
     # 7. EVALUACIÓN de anomalías (umbral configurable, defecto 3)
+    # ── REQUISITO D3: Múltiples transacciones — la ráfaga del mismo usuario
+    #    dentro de la ventana de su turno genera POSIBLE_FRAUDE ──
     estado = "NORMAL"
     if cantidad >= cfg.UMBRAL_TRANSACCIONES:
         estado = "POSIBLE_FRAUDE"
+        # ── REQUISITO A3 (línea de tiempo de una anomalía): transacciones del
+        #    cliente dentro de la ventana al momento de la detección ──
+        limite = fecha_txn - timedelta(seconds=ventana)
+        en_ventana = db.query(Pedido).filter(
+            Pedido.cliente_id == cliente.id,
+            Pedido.id_txn.isnot(None),
+            Pedido.fecha_txn >= limite,
+            Pedido.fecha_txn <= fecha_txn,
+        ).order_by(Pedido.fecha_txn).all()
+        linea = json.dumps([
+            {"idTxn": p.id_txn, "fecha": p.fecha_txn.isoformat() if p.fecha_txn else None,
+             "valor": float(p.valor or 0), "metodo_pago": p.metodo_pago}
+            for p in en_ventana
+        ])
         db.add(Anomalia(
             pedido_id=pedido.id, cliente_id=cliente.id, tipo="POSIBLE_FRAUDE",
             nivel="alta", cantidad_transacciones=cantidad, ventana_segundos=ventana,
             detalle=f"{cantidad} pedidos de {t.user} en {ventana}s (turno {turno})",
+            fechas_ventana=linea,
         ))
 
     txn.estado = estado
@@ -179,7 +200,7 @@ def ingest_lote(db: Session, items: List) -> dict:
                "RECHAZADO": 0, "RECHAZADO_DUPLICADO": 0, "RECHAZADO_HASH_INVALIDO": 0}
     detalle = []
 
-    # Ordenar cronológicamente (PDF pag. 37)
+    # Ordenar cronológicamente
     items_ordenados = sorted(items, key=lambda x: _parse_fecha(x.date))
 
     for item in items_ordenados:

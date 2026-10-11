@@ -23,9 +23,9 @@ El proyecto adapta un conjunto de ejercicios académicos de algoritmia y estruct
 * **FastAPI:** Framework moderno de alto rendimiento para APIs REST.
 * **Pydantic v2:** Validación estricta de esquemas, tipos y restricciones.
 * **SQLAlchemy 2.0:** ORM para conexión con base de datos.
-* **SQLite:** Base de datos relacional ligera embebida (archivo `imagen_perfecta.db`).
 * **Pytest & HTTPX:** Suite de pruebas automatizadas y cliente de pruebas HTTP.
 * **NumPy:** Soporte para cálculos numéricos.
+* **MySQL:** Base de datos relacional (conexión por variables `DB_USER`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT`, `DB_NAME`; ver `backend/.env.example`).
 
 ### Frontend
 * **React 19 + TypeScript**
@@ -53,17 +53,17 @@ imagen-perfecta/
 │   ├── package.json
 │   └── README.md
 │
-├── backend/                      # API REST FastAPI + SQLite
+├── backend/                      # API REST FastAPI + MySQL
 │   ├── app/
 │   │   ├── api/                  # Endpoints REST (clientes, pedidos, algoritmos, estructuras, rutas)
 │   │   ├── algorithms/           # Búsquedas, O(n²), Big O, Gauss, progresión, regresión, Dijkstra
-│   │   ├── database/             # Conexión SQLite y semilla inicial (10 clientes, 30 pedidos)
+│   │   ├── database/             # Conexión MySQL y semilla inicial (10 clientes, 30 pedidos)
 │   │   ├── models/               # Modelos SQLAlchemy (Cliente, Pedido)
 │   │   ├── schemas/              # Schemas Pydantic con validación
 │   │   ├── services/             # Lógica CRUD y estructuras (Lista enlazada, Pila, Cola, Heap)
 │   │   └── main.py               # Instancia de FastAPI, CORS y lifespan
 │   ├── tests/
-│   │   └── test_api.py           # 41 pruebas unitarias y de integración con Pytest
+│   │   └── test_api.py           # 51 pruebas unitarias y de integración con Pytest
 │   ├── requirements.txt
 │   └── README.md
 │
@@ -122,7 +122,7 @@ imagen-perfecta/
 
 ## 5. Ejecución de Pruebas Automatizadas
 
-El backend incluye una suite completa de **41 pruebas automatizadas** en `backend/tests/test_api.py`:
+El backend incluye una suite completa de **51 pruebas automatizadas** en `backend/tests/test_api.py`:
 
 ```bash
 cd backend
@@ -142,6 +142,8 @@ Cobertura de pruebas:
 * **Estructuras de Datos:** Operaciones push/pop en Pila LIFO, enqueue/dequeue en Cola FIFO, inserción/extracción en Min-Heap de prioridad, recorrido y adición en Lista Enlazada.
 * **Dijkstra y Rutas:** Grafo de Medellín, distancia óptima, ruta nodo a nodo, nodos visitados.
 * **Combustible:** Cálculo configurable de litros y costo en COP.
+* **Transacciones del profesor:** Hash válido/inválido, duplicados por idTxn, ráfaga de 3 tx dentro de la ventana → `POSIBLE_FRAUDE` con línea de tiempo persistida, lote desordenado procesado cronológicamente.
+* **Dashboard de seguridad:** Bandas día/semana/mes de transacciones y anomalías, porcentaje con anomalía, valor sospechoso, usuarios afectados/recurrentes, promedio por usuario, anomalías nuevas/abiertas/revisadas/descartadas, casos por tipo, niveles, métodos de pago, distribución por hora y serie diaria de 14 días.
 * **Casos Límite:** Lista vacía, clientes duplicados, destinos inexistentes.
 
 ---
@@ -219,6 +221,15 @@ El sistema modela las rutas de despacho desde la sede principal en el **Centro d
 * `GET /api/pedidos/{id}` — Consultar pedido por ID.
 * `PUT /api/pedidos/{id}/estado` — Actualizar estado (`Solicitado`, `En proceso`, `Listo`, `Entregado`).
 
+### Transacciones y Seguridad (contrato del profesor)
+* `POST /api/transacciones` — Recibir transacción `{idTxn,user,date,value,paymentMethod,hash}`: valida hash HMAC-SHA256 y ventana deslizante por turno (10/6/3 s, umbral 3).
+* `POST /api/transacciones/lote` — Lote de hasta 1000 transacciones, procesado en orden cronológico.
+* `GET /api/transacciones` — Log de las últimas transacciones recibidas.
+* `GET /api/anomalias` — Listar anomalías (con línea de tiempo de la ventana deslizante); filtro por `tipo` y `estado_revision`.
+* `PATCH /api/anomalias/{id}` — Revisar anomalía (`abierta`/`revisada`/`descartada`).
+* `GET /api/dashboard` — Información agregada del dashboard de seguridad: totales día/semana/mes, porcentaje, valor sospechoso, usuarios, niveles, tipos, métodos de pago, distribución por hora y serie diaria.
+* `GET /api/config` · `PUT /api/config` — Ventanas por turno y umbral configurables.
+
 ### Algoritmos
 * `POST /api/algoritmos/busqueda-lineal` — Búsqueda lineal con conteo de comparaciones.
 * `POST /api/algoritmos/busqueda-binaria` — Búsqueda binaria en pedidos ordenados.
@@ -245,7 +256,7 @@ El sistema modela las rutas de despacho desde la sede principal en el **Centro d
 
 ## 10. Datos de Prueba (Seed Inicial)
 
-La base de datos SQLite se inicializa automáticamente al arrancar con:
+La base de datos MySQL se inicializa automáticamente al arrancar con:
 * **10 clientes ficticios** representativos de fotógrafos, aficionados y nuevos clientes.
 * **30 pedidos de prueba** (`IP-0001` a `IP-0030`) con diferentes estados, prioridades, productos y direcciones en Medellín.
 * Conjuntos temporales de prueba escalables hasta **100,000 pedidos** para análisis de complejidad computacional sin sobrecargar la base de datos.
